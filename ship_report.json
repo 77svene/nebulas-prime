@@ -23,7 +23,7 @@
       {
         "check": "recent_commit",
         "pass": true,
-        "detail": "92cb0b1: feat: SHIP Nebulas Prime — The Cross-Chain NFT Liquidity & Yield Aggregator | al"
+        "detail": "edb58cc: feat: SHIP Nebulas Prime — The Cross-Chain NFT Liquidity & Yield Aggregator | al"
       },
       {
         "check": "readme_exists",
@@ -32,5 +32,5 @@
       }
     ]
   },
-  "completedAt": "2026-03-28T12:24:42.884Z"
+  "completedAt": "2026-03-28T12:30:11.762Z"
 }
