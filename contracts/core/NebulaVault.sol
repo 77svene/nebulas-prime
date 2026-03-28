@@ -34,39 +34,45 @@ contract NebulaVault is ERC1155Holder, ReentrancyGuard {
      * @param tokenId The ID of the NFT.
      */
     function deposit(address collection, uint256 tokenId) external nonReentrant {
-        require(collection != address(0), "Invalid collection");
+        IERC721 nft = IERC721(collection);
+        require(nft.ownerOf(tokenId) == msg.sender, "Not NFT owner");
+        require(nft.getApproved(tokenId) == address(this) || nft.isApprovedForAll(msg.sender, address(this)), "Not approved");
         
-        IERC721(collection).transferFrom(msg.sender, address(this), tokenId);
+        nft.transferFrom(msg.sender, address(this), tokenId);
         nftOwners[collection][tokenId] = msg.sender;
-
-        // Mint 10**18 shares per NFT to represent floor value in a divisible way
-        nebulaToken.mint(collection, msg.sender, 1e18);
-
+        
+        // Mint 1 share representing the floor value
+        nebulaToken.mint(collection, msg.sender, 1);
+        
         emit Deposit(collection, tokenId, msg.sender);
     }
 
     /**
-     * @dev Withdraws an NFT by burning the required NebulaToken shares.
+     * @dev Withdraws an NFT from the vault. Burns the corresponding NebulaToken share.
      * @param collection The address of the ERC721 collection.
      * @param tokenId The ID of the NFT.
      */
     function withdraw(address collection, uint256 tokenId) external nonReentrant {
-        require(nftOwners[collection][tokenId] == msg.sender, "Not the NFT owner");
-
-        // Burn the 10**18 shares associated with the floor value
-        nebulaToken.burn(collection, msg.sender, 1e18);
-
+        address owner = nftOwners[collection][tokenId];
+        require(owner != address(0), "No deposit found");
+        require(owner == msg.sender, "Not owner");
+        
+        // Burn the share
+        uint256 tokenIdUint = uint256(uint160(collection));
+        nebulaToken.burn(msg.sender, tokenIdUint, 1);
+        
+        // Transfer NFT back
+        IERC721 nft = IERC721(collection);
+        nft.transferFrom(address(this), msg.sender, tokenId);
         delete nftOwners[collection][tokenId];
-        IERC721(collection).transferFrom(address(this), msg.sender, tokenId);
-
+        
         emit Withdraw(collection, tokenId, msg.sender);
     }
 
     /**
-     * @dev Emergency function for guardians to rescue stuck assets.
+     * @dev Get the owner of a deposited NFT.
      */
-    function rescueNFT(address collection, uint256 tokenId, address to) external {
-        require(accessManager.isGuardian(msg.sender), "Caller is not a guardian");
-        IERC721(collection).transferFrom(address(this), to, tokenId);
+    function getDepositedNftOwner(address collection, uint256 tokenId) external view returns (address) {
+        return nftOwners[collection][tokenId];
     }
 }
