@@ -1,0 +1,36 @@
+{
+  "project": "Nebulas Prime — The Cross-Chain NFT Liquidity & Yield Aggregator",
+  "hackathon": "ETHGlobal HackMoney 2026 - Uniswap & Circle Tracks",
+  "repo": "https://github.com/77svene/nebulas-prime",
+  "deployed": {
+    "deployed": false,
+    "reason": "npm-install-failed"
+  },
+  "pushed": true,
+  "submission": {
+    "platform": "ethglobal",
+    "payloadFile": "submission_payload.json",
+    "automationFile": "submit.spec.js"
+  },
+  "verification": {
+    "allPass": true,
+    "checks": [
+      {
+        "check": "github_repo",
+        "pass": true,
+        "detail": "size=100KB, stars=0"
+      },
+      {
+        "check": "recent_commit",
+        "pass": true,
+        "detail": "4700359: feat: SHIP Nebulas Prime — The Cross-Chain NFT Liquidity & Yield Aggregator | al"
+      },
+      {
+        "check": "readme_exists",
+        "pass": true,
+        "detail": "found"
+      }
+    ]
+  },
+  "completedAt": "2026-03-28T12:20:58.512Z"
+}

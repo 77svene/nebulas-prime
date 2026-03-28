@@ -1,0 +1,40 @@
+{
+  "platform": "ethglobal",
+  "projectName": "Nebulas Prime — The Cross-Chain NFT Liquidity & Yield Aggregator",
+  "tagline": "Nebulas Prime introduces 'Yield-Bearing NFT Wrappers' that allow users to maintain NFT utility/provenance while their un",
+  "description": "Nebulas Prime is a multi-layered protocol designed to solve the capital inefficiency of high-value NFT collections. The system consists of four primary subsystems: 1. The Nebula Vault (Core), which handles the wrapping of ERC-721 assets into 'Nebula-Tokens' (ERC-1155) that represent a claim on the asset plus accrued yield. 2. The Strategy Router, which uses ZK-proofs to verify that the NFT's floor price (sourced via Chainlink) justifies a specific debt-to-equity ratio before routing liquidity into Uniswap V3 or Aave. 3. The Liquidation Engine, an optimistic guardian that monitors health factors and triggers Dutch auctions for the underlying NFT if the collateralization ratio drops below 120%. 4. The Yield Distribution Mesh, which uses a 'Push-Pull' accumulator to distribute swap fees and interest back to NFT holders without O(n) gas costs. By fractionalizing the 'floor' while keeping the 'metadata' intact, Nebulas Prime creates a liquid secondary market for NFT-backed yield, effectively turning static JPEGs into productive DeFi primitives. The protocol uses ZK-circuits to prove 'Floor-Health' without revealing the specific owner's entire wallet balance, preserving privacy while satisfying institutional risk parameters.",
+  "repoUrl": "https://github.com/77svene/nebulas-prime",
+  "demoUrl": "https://github.com/77svene/nebulas-prime#demo",
+  "deployedContract": null,
+  "techStack": [
+    "Node.js",
+    "TypeScript",
+    "Solidity",
+    "ethers.js",
+    "Express"
+  ],
+  "teamName": "VARAKH",
+  "teamMembers": [
+    "VARAKH BUILDER (AI Agent)"
+  ],
+  "devpost": {
+    "url": "https://devpost.com/software/new",
+    "fields": {
+      "software[title]": "Nebulas Prime — The Cross-Chain NFT Liquidity & Yield Aggregator",
+      "software[tagline]": "Nebulas Prime introduces 'Yield-Bearing NFT Wrappers' that allow users to maintain NFT utility/provenance while their un",
+      "software[about]": "Nebulas Prime is a multi-layered protocol designed to solve the capital inefficiency of high-value NFT collections. The system consists of four primary subsystems: 1. The Nebula Vault (Core), which handles the wrapping of ERC-721 assets into 'Nebula-Tokens' (ERC-1155) that represent a claim on the asset plus accrued yield. 2. The Strategy Router, which uses ZK-proofs to verify that the NFT's floor price (sourced via Chainlink) justifies a specific debt-to-equity ratio before routing liquidity into Uniswap V3 or Aave. 3. The Liquidation Engine, an optimistic guardian that monitors health factors and triggers Dutch auctions for the underlying NFT if the collateralization ratio drops below 120%. 4. The Yield Distribution Mesh, which uses a 'Push-Pull' accumulator to distribute swap fees and interest back to NFT holders without O(n) gas costs. By fractionalizing the 'floor' while keeping the 'metadata' intact, Nebulas Prime creates a liquid secondary market for NFT-backed yield, effectively turning static JPEGs into productive DeFi primitives. The protocol uses ZK-circuits to prove 'Floor-Health' without revealing the specific owner's entire wallet balance, preserving privacy while satisfying institutional risk parameters.",
+      "software[built_with]": "Node.js, TypeScript, Solidity, ethers.js, Express",
+      "software[links_attributes][0][url]": "https://github.com/77svene/nebulas-prime"
+    }
+  },
+  "lablab": {
+    "url": "https://lablab.ai/ai-hackathons",
+    "fields": {
+      "title": "Nebulas Prime — The Cross-Chain NFT Liquidity & Yield Aggregator",
+      "description": "Nebulas Prime is a multi-layered protocol designed to solve the capital inefficiency of high-value NFT collections. The system consists of four primary subsystems: 1. The Nebula Vault (Core), which handles the wrapping of ERC-721 assets into 'Nebula-Tokens' (ERC-1155) that represent a claim on the asset plus accrued yield. 2. The Strategy Router, which uses ZK-proofs to verify that the NFT's floor price (sourced via Chainlink) justifies a specific debt-to-equity ratio before routing liquidity into Uniswap V3 or Aave. 3. The Liquidation Engine, an optimistic guardian that monitors health factors and triggers Dutch auctions for the underlying NFT if the collateralization ratio drops below 120%. 4. The Yield Distribution Mesh, which uses a 'Push-Pull' accumulator to distribute swap fees and interest back to NFT holders without O(n) gas costs. By fractionalizing the 'floor' while keeping the 'metadata' intact, Nebulas Prime creates a liquid secondary market for NFT-backed yield, effectively turning static JPEGs into productive DeFi primitives. The protocol uses ZK-circuits to prove 'Floor-Health' without revealing the specific owner's entire wallet balance, preserving privacy while satisfying institutional risk parameters.",
+      "github_url": "https://github.com/77svene/nebulas-prime",
+      "demo_video_url": "",
+      "tech_stack": "Node.js, TypeScript, Solidity, ethers.js"
+    }
+  }
+}
