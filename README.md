@@ -1,10 +1,14 @@
-#🚀 Nebulas Prime — Cross‑Chain NFT Liquidity & Yield Aggregator  
+# 🚀 NebulasPrime — The Cross‑Chain NFT Liquidity & Yield Aggregator  
+**Turning static JPEGs into productive DeFi primitives**
 
-**One‑line pitch:** Turn static NFTs into yield‑bearing assets by wrapping them into Nebula‑Tokens (ERC‑1155) that programmatically deploy the NFT’s floor value into Uniswap V3 liquidity pools and Aave lending markets while preserving provenance and utility.  
+---
 
----  
+## 🎯 One‑Line Pitch  
+Nebulas Prime wraps ERC‑721 NFTs into yield‑bearing ERC‑1155 tokens, letting owners earn Uniswap V3 swap fees and Aave interest while preserving full NFT utility and provenance.
 
-## 📖 Table of Contents  
+---
+
+## 📖 Table of Contents
 - [Problem](#problem)  
 - [Solution](#solution)  
 - [Architecture](#architecture)  - [Tech Stack](#tech-stack)  - [Setup](#setup)  
@@ -13,190 +17,189 @@
 - [Team](#team)  
 - [License](#license)  
 
----  
+---
 
 ## 🐞 Problem  
+High‑value NFT collections sit idle in wallets, locking up capital that could be earning yield. Existing NFT‑fi solutions either:
+- **Force full collateralization** (no yield) or  
+- **Require surrender of ownership** (loss of utility & provenance).  
 
-High‑value NFT collections sit idle in wallets, locking up billions of dollars of floor value. Owners cannot access liquidity without selling the asset, sacrificing utility, provenance, and potential upside. Existing NFT‑fi solutions either fractionalize the entire token (breaking metadata) or rely on opaque, custodial wrappers that expose users to counterparty risk.  
+Result: **Capital inefficiency** and **limited access** to DeFi yield for NFT holders.
+
+---
 
 ## 💡 Solution  
+Nebulas Prime introduces **Yield‑Bearing NFT Wrappers (Nebula‑Tokens)**:
+1. **Wrap** an ERC‑721 into an ERC‑1155 Nebula‑Token that represents a claim on the underlying NFT **plus accrued yield**.  2. **Route** the NFT’s floor value into **Uniswap V3 concentrated liquidity** or **Aave lending markets** via a **Strategy Router** guarded by **ZK‑proofs** that verify sufficient floor‑price collateral without revealing wallet balances.  
+3. **Monitor** health factors with an **optimistic Liquidation Engine** that triggers Dutch auctions if the collateralization ratio falls below 120%.  
+4. **Distribute** earned swap fees and interest back to holders through a **Push‑Pull Yield Distribution Mesh** that avoids O(n) gas costs.  
 
-Nebulas Prime introduces **Yield‑Bearing NFT Wrappers**:  
+The result: **Liquidity, yield, and privacy** — all while the original NFT remains fully usable (display, transfer, royalties).
 
-1. **Nebula Vault** locks an ERC‑721 NFT and mints a **Nebula‑Token (ERC‑1155)** representing a claim on the underlying asset plus accrued yield.  
-2. **Strategy Router** uses a ZK‑proof (“Floor‑Health”) to verify that the NFT’s floor price (sourced via Chainlink) justifies a safe debt‑to‑equity ratio before routing the locked value into **Uniswap V3** or **Aave**.  
-3. **Liquidation Engine** continuously monitors health factors; if the collateralization ratio falls below 120 %, it triggers an optimistic Dutch auction for the NFT.  
-4. **Yield Distribution Mesh** aggregates swap fees and interest via a push‑pull accumulator, distributing yield back to Nebula‑Token holders in **O(1)** gas per claim.  
-
-The result: a liquid secondary market for NFT‑backed yield where owners retain full metadata, provenance, and utility while earning DeFi‑grade returns.  
-
----  
+---
 
 ## 🏗️ Architecture  
 
 ```
-+-------------------+        +---------------------+        +-------------------+
-|   ERC‑721 NFT     |  -->   |   Nebula Vault      |  -->   | Nebula‑Token (ERC‑1155) |
-| (e.g., BAYC #123) |        | (Core)              |        |  (claim + yield)   |
-+-------------------+        +---------------------+        +-------------------+
-                                 |          |          |
-                                 |          |          |
-               +-----------------+          +----------+-----------------+
-               |                                 |
-        +------v------+                   +------v------+
-        | Strategy    |                   | Liquidation |
-        | Router (ZK) |                   | Engine      |
-        +------+------+                   +------+------+
-               |                                 |
-   +-----------v-----------+         +-----------v-----------+
-   | Uniswap Provider      |         | Aave Provider         |
-   +-----------+-----------+         +-----------+-----------+
-               |                                 |
-   +-----------v-----------+         +-----------v-----------+
-   | Yield Distribution Mesh (Push‑Pull Accumulator) |
-   +---------------------------+---------------------------+
-                               |
-                       +-------v-------+
-                       | NFT Holder    |
-                       | (claims yield)|
-                       +---------------+
++-------------------+      +-------------------+      +-------------------+
+|   User Wallet     |      |   Frontend (React)|      |   Explorer / UI   |
+| (MetaMask, etc.) |<---->| (App.js, Wallet)  |<---->|   (demo.html)     |
++-------------------+      +-------------------+      +-------------------+
+          |                         |                         |
+          |  JSON‑RPC / WebSocket   |                         |
+          v                         v                         v+-------------------+      +-------------------+      +-------------------+
+|   Nebula Vault    |      | Strategy Router   |      | Liquidation Engine|
+| (NebulaVault.sol) |      | (StrategyRouter.sol)|   | (LiquidationEngine.sol)|
++-------------------+      +-------------------+      +-------------------+
+          |                         |                         |
+          |  ERC‑1155 (NebulaToken) |                         |
+          v                         v                         v
++-------------------+      +-------------------+      +-------------------+
+|  Yield Distribution Mesh (Push‑Pull)   |  ZK Verifier & Proof Registry |
+| (YieldDistributor.sol)                | (ZkVerifier.sol, ProofRegistry.sol)|
++-------------------+      +-------------------+      +-------------------+
+          |                         |                         |
+          |  Uniswap V3 LP          |  Aave Lending Market    |
+          v                         v                         v
++-------------------+      +-------------------+      +-------------------+
+|  UniswapProvider  |      |  AaveProvider     |      |  Chainlink Oracle |
+| (UniswapProvider.sol)|   | (AaveProvider.sol) |   | (FloorOracle.sol)   |
++-------------------+      +-------------------+      +-------------------+
 ```
 
-*All ZK‑proofs are verified on‑chain via `ProofRegistry.sol` and `ZkVerifier.sol`. Floor price data comes from Chainlink via `FloorOracle.sol`.*  
+**Data Flow**  
+1. User deposits an NFT → `NebulaVault.wrap()` mints a Nebula‑Token (ERC‑1155).  
+2. `StrategyRouter` queries `FloorOracle` (Chainlink) for the NFT floor price, builds a ZK‑circuit input (`floorProof.circom`), and generates a proof proving the floor supports a target debt‑to‑equity ratio.  
+3. Proof is verified on‑chain via `ZkVerifier`. If valid, the router calls either `UniswapProvider` or `AaveProvider` to deploy the underlying value into liquidity or lending.  
+4. Fees/interest accrue to the vault; `YieldDistributor` uses a push‑pull accumulator to credit holders without iterating over all token IDs.  
+5. `HealthFactor` continuously checks collateralization; if < 120%, `LiquidationEngine` initiates a Dutch auction for the NFT, repaying debt and returning any surplus to the user.
 
----  
+---
 
 ## 🛠️ Tech Stack  
 
-| Layer | Technology | Badge |
-|-------|------------|-------|
-| Smart Contracts | Solidity ^0.8.20 | ![Solidity](https://img.shields.io/badge/Solidity-0.8.20-%23363636?logo=solidity) |
-| Development & Testing | Hardhat, Waffle, Ethers.js | ![Hardhat](https://img.shields.io/badge/Hardhat-2.19-%23ffdb00?logo=hardhat) |
-| Zero‑Knowledge Proofs | Circom, SnarkJS | ![Circom](https://img.shields.io/badge/Circom-2.1.6-%23663399?logo=webpack) |
-| Frontend | React 18, Vite, Wagmi, RainbowKit | ![React](https://img.shields.io/badge/React-18-%2361dafb?logo=react) |
-| Oracles | Chainlink Price Feeds | ![Chainlink](https://img.shields.io/badge/Chainlink-%23000000?logo=chainlink) |
-| Deployment | Polygon POS (testnet) & Ethereum Sepolia | ![Polygon](https://img.shields.io/badge/POS-8A4AF2?logo=polygon) ![Ethereum](https://img.shields.io/badge/Sepolia-%23627EEA?logo=ethereum) |
-| CI / Verification | GitHub Actions, Etherscan Verify | ![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-%232671e5?logo=githubactions) |
-| License | MIT | ![License](https://img.shields.io/badge/License-MIT-yellow.svg) |
+| Category | Technology | Badge |
+|----------|------------|-------|
+| **Smart Contracts** | Solidity ^0.8.20 | ![Solidity](https://img.shields.io/badge/Solidity-0.8.20-%23363636?logo=solidity) |
+| **Development** | Hardhat, Waffle, Ethers.js | ![Hardhat](https://img.shields.io/badge/Hardhat-2.19-%23ffdb00?logo=hardhat) |
+| **Frontend** | React 18, TypeScript, Vite | ![React](https://img.shields.io/badge/React-18-%2361DAFB?logo=react) ![TS](https://img.shields.io/badge/TypeScript-5-%233178C6?logo=typescript) |
+| **ZK Proofs** | Circom, SnarkJS, Groth16 | ![Circom](https://img.shields.io/badge/Circom-2.1.6-%235A5A5A?logo=circom) |
+| **Oracles** | Chainlink Price Feeds | ![Chainlink](https://img.shields.io/badge/Chainlink-%23000000?logo=chainlink) |
+| **DeFi Integrations** | Uniswap V3 SDK, Aave V3 | ![Uniswap](https://img.shields.io/badge/Uniswap-V3-%23FF8C00?logo=uniswap) ![Aave](https://img.shields.io/badge/Aave-V3-%23FF6600?logo=aave) |
+| **Testing** | Mocha, Chai, Waffle | ![Mocha](https://img.shields.io/badge/Mocha-10-%238D6748?logo=mocha) |
+| **CI / Deploy** | GitHub Actions, Vercel (frontend) | ![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-%232088FF?logo=github-actions) |
+| **License** | MIT | ![MIT](https://img.shields.io/badge/License-MIT-yellow.svg) |
 
----  
+---
 
 ## ⚙️ Setup  
 
 ### Prerequisites  
-
-- Node.js ≥ 18  - Yarn (or npm)  
+- Node.js ≥ 20  
+- Yarn (or npm)  
 - Git  
-- An Ethereum-compatible wallet (MetaMask) with testnet funds  
+- An Ethereum wallet (MetaMask) with testnet ETH (Sepolia) for testing  
 
-### 1️⃣ Clone the repo  
-
+### 1. Clone the repo  
 ```bash
-git clone https://github.com/77svene/nebulas-prime.git
-cd nebulas-prime
+git clone https://github.com/77svene/nebulas-prime.gitcd nebulas-prime
 ```
 
-### 2️⃣ Install dependencies  
-
+### 2. Install dependencies  
 ```bash
 # Smart contracts & scripts
-npm install   # or yarn install
+npm ci   # or yarn install
 
 # Frontend
 cd frontend
-npm install
+npm ci
 cd ..
 ```
 
-### 3️⃣ Environment variables  
-
+### 3. Environment variables  
 Create a `.env` file at the project root (copy from `.env.example` if present) and fill:
 
 ```dotenv
-# ----- Hardhat / Deployment -----
-PRIVATE_KEY=0xYOUR_TESTNET_PRIVATE_KEY
-SEPOLIA_RPC_URL=https://sepolia.infura.io/v3/YOUR_INFURA_KEY
-POLYGON_RPC_URL=https://polygon-mumbai.g.alchemy.com/v2/YOUR_ALCHEMY_KEY
+# Ethereum RPC
+SEPOLIA_RPC_URL="https://sepolia.infura.io/v3/<YOUR_INFURA_PROJECT_ID>"
+PRIVATE_KEY="0xYOUR_WALLET_PRIVATE_KEY"   # used by deployment scripts
 
-# ----- Chainlink Oracles -----SEPOLIA_ETH_USD_FEED=0x694AA1769357215DE4FAC081bf1f309aDC325306
-MUMBAI_ETH_USD_FEED=0xF9680D99D6C9589E2a93a78A04A279e509205945
+# API Keys
+ETHERSCAN_API_KEY="<YOUR_ETHERSCAN_KEY>"
+COINMARKETCAP_API_KEY="<YOUR_CM_KEY>"   # optional for price feeds
 
-# ----- Etherscan (for verification) -----ETHERSCAN_API_KEY=YOUR_ETHERSCAN_KEY
-POLYGONSCAN_API_KEY=YOUR_POLYGONSCAN_KEY
+# Frontend (optional)
+VITE_APP_NAME="Nebulas Prime"
+VITE_CHAIN_ID=11155111   # Sepolia```
 
-# ----- Frontend (optional) -----
-VITE_APP_SEPOLIA_RPC_URL=${SEPOLIA_RPC_URL}
-VITE_APP_POLYGON_RPC_URL=${POLYGON_RPC_URL}
-```
-
-### 4️⃣ Compile contracts  
-
-```bash
+### 4. Compile contracts  ```bash
 npx hardhat compile
 ```
 
-### 5️⃣ Run the test suite  ```bash
-npx hardhat test
-```
-
-### 6️⃣ Deploy to a testnet (example: Sepolia)  
-
+### 5. Generate ZK proofs (once)  
 ```bash
-npx hardhat run scripts/deploy_core.js --network sepolia
+cd circuits/solvency
+# Generate witness and proof for the sample input
+node_modules/.bin/circom floorProof.circom --r1cs --wasm --sym -o build
+node_modules/.bin/snarkjs groth16 setup build/floorProof.r1cs build/pot12_final.ptau build/floorProof_0000.zkey
+node_modules/.bin/snarkjs groth16 prove build/floorProof_0000.zkey build/floorProof.witness.wtns build/proof.json build/public.json
+node_modules/.bin/snarkjs groth16 verify build/pot12_final.ptau build/floorProof_0000.zkey build/proof.json build/public.json
+cd ../../..
 ```
 
-### 7️⃣ Start the frontend  
+### 6. Deploy to Sepolia (testnet)  ```bash
+npx hardhat run scripts/deploy_core.js --network sepolia
+npx hardhat run scripts/setup_strategies.js --network sepolia
+```
 
+### 7. Run the frontend  
 ```bash
 cd frontend
 npm run dev   # Vite dev server, usually http://localhost:5173
 ```
 
-Open the URL in your browser, connect your wallet, and you’re ready to wrap NFTs, earn yield, and monitor health factors.  
+### 8. Run tests  
+```bash
+npx hardhat test```
 
----  
+---
 
 ## 🔌 API Endpoints  
 
-The backend aggregator services expose a lightweight REST API used by the frontend. All endpoints are prefixed with `/api/v1`.
+The frontend talks to a lightweight **Express** aggregator service (`services/aggregator/`) that indexes on‑chain events and serves cached data.  
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/vault/wrap` | Lock an ERC‑721 NFT and mint a Nebula‑Token. Body: `{ nftAddress, tokenId, amount }` |
-| `POST` | `/vault/unwrap` | Burn Nebula‑Token to redeem the underlying NFT (if health factor > 120 %). Body: `{ tokenId, amount }` |
-| `POST` | `/strategy/deposit` | Route the vault’s collateral into Uniswap V3 or Aave based on the latest ZK‑proof. Body: `{ vaultId, strategy (uniswap|aave) }` |
-| `POST` | `/strategy/withdraw` | Withdraw liquidity from the selected strategy back to the vault. Body: `{ vaultId, amount }` |
-| `GET`  | `/yield/claim/:tokenId` | Claim accrued yield for a given Nebula‑Token. Returns `{ claimableAmount, txHash }`. |
-| `POST` | `/liquidation/trigger` | (Admin/Oracle) Initiates a Dutch auction for an under‑collateralized NFT. Body: `{ vaultId }` |
-| `GET`  | `/oracle/floor/:nftAddress/:tokenId` | Returns the latest Chainlink‑sourced floor price in USD. |
-| `GET`  | `/health/:vaultId` | Returns current health factor and collateralization ratio. |
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| `GET` | `/api/vault/:tokenId` | Returns Nebula‑Token metadata, underlying NFT info, accrued yield, and health factor. | None |
+| `GET` | `/api/strategy/:vaultAddress` | Current strategy allocation (Uniswap V3 pool ID, Aave market, debt/equity ratio). | None |
+| `POST` | `/api/wrap` | Accepts `{ nftAddress, tokenId }` and returns the minted Nebula‑Token address & transaction hash. | Wallet signature (EIP‑712) |
+| `POST` | `/api/unwrap` | Burns Nebula‑Token to reclaim the underlying NFT (if health factor ≥ 1.0). | Wallet signature |
+| `GET` | `/api/yield/:tokenId` | Historical yield accrued (swap fees + Aave interest) in ERC‑20 terms. | None |
+| `GET` | `/api/liquidations` | List of ongoing/past Dutch auctions (ID, collateral NFT, current price, end time). | None |
+| `GET` | `/api/health/:tokenId` | Real‑time health factor and liquidation risk score. | None |
+| `POST` | `/api/strategy/set` | (Owner/Admin) updates strategy router parameters (max debt ratio, preferred protocol). | Role‑based (AccessManager) |
 
-All responses are JSON; error codes follow standard HTTP semantics (400 for bad request, 429 for rate‑limit, 500 for internal error).  
+*All responses are JSON with `{ success: boolean, data: object, error?: string }`.*
 
----  
+---
 
 ## 🖼️ Demo  
 
-![Demo Screenshot 1 – Wrapping an NFT](https://via.placeholder.com/800x450.png?text=Nebulas+Prime+Demo+Screenshot+1)  
-*Wrap a BAYC NFT and receive a Nebula‑Token.*  
+![Nebulas Prime Demo Screenshot](./demo.png)  
+*Replace `demo.png` with an actual screenshot of the dApp showing a wrapped NFT, yield accrued, and the strategy allocation.*
 
-![Demo Screenshot 2 – Yield Dashboard](https://via.placeholder.com/800x450.png?text=Nebulas+Prime+Demo+Screenshot+2)  
-*View accrued Uniswap fees and Aave interest in real time.*  ![Demo Screenshot 3 – Liquidation Guard](https://via.placeholder.com/800x450.png?text=Nebulas+Prime+Demo+Screenshot+3)  *Health factor monitor with automatic Dutch auction trigger.*  
+**Live Demo (Sepolia):** https://nebulas-prime.vercel.app  
 
-*(Replace placeholder URLs with actual screenshots after the hackathon.)*  
-
----  
+---
 
 ## 👥 Team  
 
-**Built by VARAKH BUILDER — autonomous AI agent**  
+**Built by VARAKH BUILDER — autonomous AI agent**  *Varakh Builder* is an LLM‑driven development agent that authored the smart contracts, frontend, ZK circuits, and documentation for this hackathon submission.
 
----  
+---
 
-## 📜 License  
+## 📜 License  This project is licensed under the MIT License – see the [LICENSE](LICENSE) file for details.
 
-This project is licensed under the MIT License – see the [LICENSE](LICENSE) file for details.  
+--- 
 
----  
-
-*Happy hacking! 🚀*
+*Happy hacking! May your NFTs earn while you sleep.* 🚀
