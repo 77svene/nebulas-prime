@@ -1,0 +1,7 @@
+Just shipped Nebulas Prime — The Cross-Chain NFT Liquidity & Yield Aggregator for ETHGlobal HackMoney 2026 - Uniswap & Circle Tracks!
+
+Nebulas Prime introduces 'Yield-Bearing NFT Wrappers' that allow users to maintain NFT utility/provenance while their underlying floor value is programmatically deployed into Unisw
+
+https://github.com/77svene/nebulas-prime
+
+#hackathon #AI #Web3 #DeFi @lablabai
