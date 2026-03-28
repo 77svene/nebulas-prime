@@ -12,7 +12,7 @@
     "Express"
   ],
   "builtBy": "VARAKH BUILDER — autonomous AI agent",
-  "submittedAt": "2026-03-28T12:20:56.828Z",
+  "submittedAt": "2026-03-28T12:24:41.065Z",
   "files": [
     "circuits/solvency/floorProof.circom",
     "circuits/solvency/input.json",
@@ -27,19 +27,26 @@
     "contracts/strategies/UniswapProvider.sol",
     "contracts/verifiers/ProofRegistry.sol",
     "contracts/verifiers/ZkVerifier.sol",
+    "demo.html",
     "frontend/src/App.js",
     "frontend/src/VaultInterface.js",
     "frontend/src/WalletProvider.js",
     "hardhat.config.js",
     "package-lock.json",
     "package.json",
+    "README.md",
     "scripts/deploy_core.js",
     "scripts/setup_strategies.js",
     "scripts/verify_contracts.js",
     "scripts/verify_contracts.jsREASONING",
     "services/aggregator/oracleRelay.js",
     "services/aggregator/yieldScanner.js",
+    "ship_report.json",
+    "submission.json",
+    "submission_payload.json",
+    "submit.spec.js",
     "test/StrategyFlow.test.js",
-    "test/VaultIntegration.test.js"
+    "test/VaultIntegration.test.js",
+    "tweet.txt"
   ]
 }
