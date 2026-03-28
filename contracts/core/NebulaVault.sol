@@ -31,47 +31,42 @@ contract NebulaVault is ERC1155Holder, ReentrancyGuard {
     /**
      * @dev Deposits an NFT into the vault and mints 1 NebulaToken share (representing floor).
      * @param collection The address of the ERC721 collection.
-     * @param tokenId The ID of the NFT to deposit.
+     * @param tokenId The ID of the NFT.
      */
     function deposit(address collection, uint256 tokenId) external nonReentrant {
+        require(collection != address(0), "Invalid collection");
+        
         IERC721(collection).transferFrom(msg.sender, address(this), tokenId);
-        
         nftOwners[collection][tokenId] = msg.sender;
-        
-        // Mint 10**18 shares per NFT to allow fractional yield distribution
-        nebulaToken.mint(collection, msg.sender, 1 ether);
-        
+
+        // Mint 10**18 shares per NFT to represent floor value in a divisible way
+        nebulaToken.mint(collection, msg.sender, 1e18);
+
         emit Deposit(collection, tokenId, msg.sender);
     }
 
     /**
-     * @dev Withdraws an NFT by burning the corresponding NebulaToken shares.
+     * @dev Withdraws an NFT by burning the required NebulaToken shares.
      * @param collection The address of the ERC721 collection.
-     * @param tokenId The ID of the NFT to withdraw.
+     * @param tokenId The ID of the NFT.
      */
     function withdraw(address collection, uint256 tokenId) external nonReentrant {
-        require(nftOwners[collection][tokenId] == msg.sender, "Not the original depositor");
-        
-        // User must return the floor value shares to reclaim the specific NFT
-        nebulaToken.burn(collection, msg.sender, 1 ether);
-        
+        require(nftOwners[collection][tokenId] == msg.sender, "Not the NFT owner");
+
+        // Burn the 10**18 shares associated with the floor value
+        nebulaToken.burn(collection, msg.sender, 1e18);
+
         delete nftOwners[collection][tokenId];
         IERC721(collection).transferFrom(address(this), msg.sender, tokenId);
-        
+
         emit Withdraw(collection, tokenId, msg.sender);
     }
 
     /**
-     * @dev Emergency liquidation function called by Guardians.
-     * Transfers NFT to the liquidation engine or buyer.
+     * @dev Emergency function for guardians to rescue stuck assets.
      */
-    function liquidate(address collection, uint256 tokenId, address recipient) external {
+    function rescueNFT(address collection, uint256 tokenId, address to) external {
         require(accessManager.isGuardian(msg.sender), "Caller is not a guardian");
-        
-        address owner = nftOwners[collection][tokenId];
-        require(owner != address(0), "NFT not in vault");
-
-        delete nftOwners[collection][tokenId];
-        IERC721(collection).transferFrom(address(this), recipient, tokenId);
+        IERC721(collection).transferFrom(address(this), to, tokenId);
     }
 }

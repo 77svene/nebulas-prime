@@ -1,85 +1,83 @@
-const { ethers, network } = require("hardhat");
+const hre = require("hardhat");
 const fs = require("fs");
 const path = require("path");
 
-async function main() {
-    const [deployer] = await ethers.getSigners();
-    const balance = await ethers.provider.getBalance(deployer.address);
-    console.log(`Deploying contracts with account: ${deployer.address} on network: ${network.name}`);
-    console.log(`Account balance: ${ethers.formatEther(balance)} ETH`);
+// File to persist deployment addresses
+const DEPLOYMENT_FILE = path.join(__dirname, "..", "deployment.json");
 
-    if (balance === 0n) {
-        throw new Error("Deployer has no funds. Deployment aborted.");
-    }
-
-    const deploymentsPath = path.join(__dirname, `../deployments_${network.name}.json`);
-    let deployments = {};
-    if (fs.existsSync(deploymentsPath)) {
-        deployments = JSON.parse(fs.readFileSync(deploymentsPath, "utf8"));
-    }
-
-    async function deployOrAttach(name, args = []) {
-        if (deployments[name]) {
-            console.log(`${name} already deployed at: ${deployments[name]}`);
-            return await ethers.getContractAt(name, deployments[name]);
-        }
-        console.log(`Deploying ${name}...`);
-        const Factory = await ethers.getContractFactory(name);
-        const contract = await Factory.deploy(...args);
-        await contract.waitForDeployment();
-        const address = await contract.getAddress();
-        console.log(`${name} deployed to: ${address}`);
-        deployments[name] = address;
-        fs.writeFileSync(deploymentsPath, JSON.stringify(deployments, null, 2));
-        return contract;
-    }
-
-    try {
-        // 1. AccessManager
-        const accessManager = await deployOrAttach("AccessManager", [deployer.address]);
-
-        // 2. NebulaToken
-        const nebulaToken = await deployOrAttach("NebulaToken", [deployer.address]);
-
-        // 3. NebulaVault
-        const nebulaVault = await deployOrAttach("NebulaVault", [
-            await nebulaToken.getAddress(),
-            await accessManager.getAddress()
-        ]);
-
-        // 4. ZkVerifier
-        const zkVerifier = await deployOrAttach("ZkVerifier");
-
-        // 5. ProofRegistry
-        const proofRegistry = await deployOrAttach("ProofRegistry", [await zkVerifier.getAddress()]);
-
-        // 6. FloorOracle
-        const floorOracle = await deployOrAttach("FloorOracle", [await accessManager.getAddress()]);
-
-        // 7. HealthFactor
-        const healthFactor = await deployOrAttach("HealthFactor", [
-            await floorOracle.getAddress(),
-            await proofRegistry.getAddress()
-        ]);
-
-        // 8. Linkage: Transfer NebulaToken ownership to Vault if not already done
-        const currentTokenOwner = await nebulaToken.owner();
-        const vaultAddress = await nebulaVault.getAddress();
-        if (currentTokenOwner !== vaultAddress) {
-            console.log("Transferring NebulaToken ownership to Vault...");
-            const tx = await nebulaToken.transferOwnership(vaultAddress);
-            await tx.wait();
-            console.log(`Ownership transferred. Hash: ${tx.hash}`);
-        }
-
-        console.log("Core deployment and linkage complete.");
-    } catch (error) {
-        console.error("Deployment failed:", error);
-        process.exit(1);
-    }
+async function loadDeployment() {
+  try {
+    const data = fs.readFileSync(DEPLOYMENT_FILE);
+    return JSON.parse(data);
+  } catch (error) {
+    return {};
+  }
 }
 
-main().catch((error) => {
-    console.error(error);
+async function saveDeployment(deployments) {
+  fs.writeFileSync(DEPLOYMENT_FILE, JSON.stringify(deployments, null, 2));
+}
+
+async function deployContractIfNotExists(deployments, contractName, args = []) {
+  if (deployments[contractName]) {
+    console.log(`Using existing ${contractName} at ${deployments[contractName]}`);
+    return await hre.ethers.getContractAt(contractName, deployments[contractName]);
+  }
+
+  try {
+    console.log(`Deploying ${contractName}...`);
+    const Contract = await hre.ethers.getContractFactory(contractName);
+    const contract = await Contract.deploy(...args);
+    await contract.deployed();
+    deployments[contractName] = contract.address;
+    await saveDeployment(deployments);
+    console.log(`${contractName} deployed to ${contract.address}`);
+    return contract;
+  } catch (error) {
+    console.error(`Failed to deploy ${contractName}: ${error.message}`);
     process.exit(1);
-});
+  }
+}
+
+async function main() {
+  const deployments = await loadDeployment();
+  
+  // 1. Deploy AccessManager first
+  const adminAddress = (await hre.ethers.getSigners())[0].address;
+  const accessManager = await deployContractIfNotExists(deployments, "AccessManager", [adminAddress]);
+  
+  // 2. Deploy NebulaToken
+  const nebulaToken = await deployContractIfNotExists(deployments, "NebulaToken", [accessManager.address]);
+  
+  // 3. Deploy ProofRegistry with verified accessManager
+  const proofRegistry = await deployContractIfNotExists(deployments, "ProofRegistry", [accessManager.address]);
+  
+  // 4. Deploy other core contracts
+  const floorOracle = await deployContractIfNotExists(deployments, "FloorOracle", [accessManager.address]);
+  const healthFactor = await deployContractIfNotExists(deployments, "HealthFactor", [accessManager.address]);
+  const liquidationEngine = await deployContractIfNotExists(deployments, "LiquidationEngine", [accessManager.address]);
+  
+  // 5. Deploy strategy router with core dependencies
+  const strategyRouter = await deployContractIfNotExists(deployments, "StrategyRouter", [
+    accessManager.address,
+    floorOracle.address,
+    healthFactor.address
+  ]);
+
+  // Verify deployment sequence
+  console.log("\nDeployment Summary:");
+  console.log(`AccessManager: ${accessManager.address}`);
+  console.log(`NebulaToken: ${nebulaToken.address}`);
+  console.log(`ProofRegistry: ${proofRegistry.address}`);
+  console.log(`FloorOracle: ${floorOracle.address}`);
+  console.log(`HealthFactor: ${healthFactor.address}`);
+  console.log(`LiquidationEngine: ${liquidationEngine.address}`);
+  console.log(`StrategyRouter: ${strategyRouter.address}`);
+}
+
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(`Deployment failed: ${error.message}`);
+    process.exit(1);
+  });
